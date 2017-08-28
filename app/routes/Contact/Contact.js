@@ -108,7 +108,6 @@ class Contact extends Component {
       loadingUser: true,
       loadingInfo: true,
       childNumber: 0,
-      childrenObj: [],
       currentUid : firebase.auth().currentUser.uid,
       uid        : '',
       password   : ''
@@ -171,7 +170,6 @@ class Contact extends Component {
     val = snapshot.val() || {};
     info = val;
 
-    member     = '';
     child      = [];
     childNumber= 0;
     drink      = '';
@@ -179,11 +177,6 @@ class Contact extends Component {
     snack      = '';
     music      = '';
     sport      = '';
-    if (typeof info.family !== 'undefined') {
-      member     = info.family.member;
-      child      = info.family.children;
-      childNumber= info.family.children.length;
-    }
     if (info.favourite) {
       drink = info.favourite.drink;
       food  = info.favourite.food;
@@ -191,21 +184,26 @@ class Contact extends Component {
       music = info.favourite.music;
       sport = info.favourite.sport;
     }
+    if (info.children) {
+      childNumber = info.children.length;
+      child = info.children;
+    }
     this.setState({
       info,
-      member,
-      child,
-      childNumber,
       drink,
       food,
       snack,
       music,
       sport,
+      childNumber,
+      child,
+      member     : info.member,
       loadingInfo: false,
       nickname   : info.nickname,
       gender     : info.gender,
       more       : info.info
     });
+    console.log(this.state);
   }
 
   header() {
@@ -216,7 +214,6 @@ class Contact extends Component {
         <Icon name="caret-left" size={45} color="#fff" style={iconLeft} />
       </TouchableOpacity>
       <Text style={textStyle}>Profile</Text>
-      <Text></Text>
       {
         this.props.currentUser === true
           ? (<TouchableOpacity onPress={() => this.setState({ isPasswordVisible: true })} style={styles.headBtn}>
@@ -246,10 +243,8 @@ class Contact extends Component {
   saveFamily(){
     firebase.database().ref(`/userInfo/${this.props.uid}`)
     .update({
-      family: {
-        member  : this.state.member,
-        children: this.state.child
-      }
+      member  : this.state.member,
+      children: this.state.child
     })
     .then(() => { this.setState({ isFamilyVisible: false })
     });
@@ -420,9 +415,10 @@ class Contact extends Component {
   }
 
   renderChildren() {
+    console.log(this.state);
     let children = [];
     for ( let i = 0; i < this.state.childNumber; i ++) {
-
+      console.log(i);
       children.push(
         <CardSection key={i}>
           <Input
@@ -431,6 +427,9 @@ class Contact extends Component {
             onChangeText={(child) => this.addChildToObject(i, child)}
             value       ={this.state.child[i]}
           />
+          <TouchableOpacity>
+            <Icon name="times" size={30} color="#F44336" style={styles.iconList}/>
+          </TouchableOpacity>
         </CardSection>
       );
     }
@@ -489,9 +488,7 @@ class Contact extends Component {
           onClose={() => this.setState({ isBigImage: false })}>
           {
             this.state.user.profileImg
-              ? <View style={{alignItems: 'center', justifyContent: 'center'}}>
-                <Image source={{uri: this.state.user.profileImg}} style={styles.bigImage} />
-                </View>
+              ? <Image source={{uri: this.state.user.profileImg}} style={styles.bigImage} />
               : <Image source={images.avatar} style={styles.bigImage} />
           }
         </ModalWrapperClose>
@@ -638,7 +635,12 @@ class Contact extends Component {
           isVisible={this.state.isFamilyVisible}
           title="Family"
           onSave={this.saveFamily.bind(this)}
-          onHide={() => this.setState({ isFamilyVisible: false, member: this.state.info.family.member, child: this.state.info.family.children, childNumber: this.state.info.family.children.length })} >
+          onHide={() => this.setState({
+            isFamilyVisible: false,
+            member: this.state.info.member,
+            child: this.state.info.children ? this.state.info.children : [],
+            childNumber: this.state.info.children ? this.state.info.children.length : 0 
+          })} >
           <Card>
             <CardSection>
               <Input
@@ -763,10 +765,10 @@ class Contact extends Component {
   }
 
   renderFamily(infoProp) {
-    if (!infoProp.family || !infoProp.family.children)
+    if (!infoProp.children)
       return ;
     let children = [];
-    infoProp.family.children.forEach( (child, i) => {
+    infoProp.children.forEach( (child, i) => {
       children.push(
         <View key={i} style={styles.mainContainerStyle}>
           <Icon style={styles.contentIconStyle} name="child" size={18} color="#333"/>
@@ -959,22 +961,19 @@ class Contact extends Component {
           <View style={styles.mainContent}>
             <View style={styles.mainContainerStyle}>
               {
-                (infoProp.family && infoProp.family.member)
+                (infoProp.member)
                   ? 
                   <View style={styles.btnContainer}>
                     <Icon style={styles.contentIconStyle} name="heart" size={14} color="#333"/>
-                    <Text style={styles.contentIconStyle}>{infoProp.family.member}</Text>
+                    <Text style={styles.contentIconStyle}>{infoProp.member}</Text>
                   </View>
                   : null
               }
               {
-                infoProp.gender === 'Female'
-                  ? <Text>\husband\</Text>
-                  : null
-              }
-              {
-                infoProp.gender === 'Male'
-                  ? <Text>\wife\</Text>
+                (infoProp.member)
+                  ? (infoProp.gender && infoProp.gender.toLowerCase() === 'female')
+                      ? <Text>\husband\</Text>
+                      : <Text>\wife\</Text>
                   : null
               }
             </View>
@@ -1098,6 +1097,7 @@ class Contact extends Component {
         {
           this.props.isAdmin &&
           <EditButton
+            style={styles.floatButton}
             onEditPress={this.editContact.bind(this)}/>
         }
     </View>
@@ -1200,11 +1200,9 @@ const styles = StyleSheet.create({
   },
   bigImage: {
     height: 300,
-    width: 300,
-    margin: 10,
     resizeMode: 'contain',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignSelf: 'center'
   },
   profileImageDetail: {
     width: 100,

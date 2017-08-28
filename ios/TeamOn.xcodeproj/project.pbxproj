@@ -5,6 +5,7 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -52,6 +53,7 @@
 		9BAE4778C0B54F51A46199D2 /* libRNFirebase.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 952D4A9C0CB8412F9A6F6FF5 /* libRNFirebase.a */; };
 		AB13BC907C654999A0828284 /* libRNFetchBlob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 517BD8734F614F32A8949D0F /* libRNFetchBlob.a */; };
 		C91850C6F4404A709D532683 /* libRNVectorIcons.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AFCEEE8B4A29429CA8DB5BEC /* libRNVectorIcons.a */; };
+		D49CDEA4F2171A4A505E4BA7 /* libPods-TeamOn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C45051BAC1EDE0FCDA60208 /* libPods-TeamOn.a */; };
 		E4B58003B9C54EF5B8915944 /* Zocial.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 790F236255DD4547A5AE36C0 /* Zocial.ttf */; };
 		F13277583D0242B78FD35BE5 /* MaterialIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E015C531176C4B5695BCB572 /* MaterialIcons.ttf */; };
 /* End PBXBuildFile section */
@@ -386,6 +388,7 @@
 				9BAE4778C0B54F51A46199D2 /* libRNFirebase.a in Frameworks */,
 				AB13BC907C654999A0828284 /* libRNFetchBlob.a in Frameworks */,
 				5B493F8B6DAD4679BA3BA2B7 /* libRNImagePicker.a in Frameworks */,
+				D49CDEA4F2171A4A505E4BA7 /* libPods-TeamOn.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
