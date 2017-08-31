@@ -1,6 +1,20 @@
 import React, { Component } from 'react';
 import { Actions } from 'react-native-router-flux';
-import { View, Text, Platform, Image, Dimensions, ScrollView, TextInput, Picker, TouchableOpacity, TouchableHighlight, Linking, StyleSheet } from 'react-native';
+import { 
+  View,
+  Text,
+  Image,
+  Picker,
+  Linking,
+  Platform,
+  ListView,
+  TextInput,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+  TouchableHighlight,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DatePicker from 'react-native-datepicker'
 import Modal from 'react-native-modal';
@@ -21,7 +35,7 @@ class ModalWrapper extends Component {
   }
 
   render() {
-    const { title, icon, isVisible, onChangeText, value, onSave, onHide, children } = this.props;
+    const { title, icon, isVisible, onChangeText, value, onSave, onHide, onDelete, children } = this.props;
     const { modal, modalTitle, btnContainer, btn, btntextStyle } = styles;
     return (
       <Modal isVisible={isVisible}>
@@ -29,9 +43,20 @@ class ModalWrapper extends Component {
           <Text style={modalTitle}>{title}</Text>
           {children}
           <View style={btnContainer}>
-            <TouchableOpacity style={btn} onPress={onSave}>
-              <Text style={btntextStyle}>Save</Text>
-            </TouchableOpacity> 
+            {
+              onSave
+                ? <TouchableOpacity style={btn} onPress={onSave}>
+                    <Text style={btntextStyle}>Save</Text>
+                  </TouchableOpacity> 
+                : null
+            }
+            {
+              onDelete
+                ? <TouchableOpacity style={[btn, {backgroundColor: '#F44336', borderColor: 'red'}]} onPress={onDelete}>
+                    <Text style={btntextStyle}>Delete</Text>
+                  </TouchableOpacity> 
+                : null
+            }
             <TouchableOpacity style={btn} onPress={onHide}>
               <Text style={btntextStyle}>Cancel</Text>
             </TouchableOpacity> 
@@ -73,7 +98,6 @@ window.Blob = Blob
 const  uploadImage = (uri, mime, uid) => {
     return new Promise((resolve, reject) => {
       const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
-      console.log(uploadUri);
       let uploadBlob = null
 
       const imageRef = firebase.storage().ref('profileImg').child(uid)
@@ -110,12 +134,11 @@ class Contact extends Component {
       childNumber: 0,
       currentUid : firebase.auth().currentUser.uid,
       uid        : '',
-      password   : ''
+      password   : '',
+      familyError: '',
     };
       
     this.renderContent = this.renderContent.bind(this);
-    this.renderChildren = this.renderChildren.bind(this);
-    this.addChildToObject = this.addChildToObject.bind(this);
   }
     state = {
       isSocialVisible      : false,
@@ -130,6 +153,8 @@ class Contact extends Component {
       isPasswordVisible    : false,
       isProfileImageVisible: false,
       isBigImage           : false,
+      isFamilyMemberVisible: false,
+      isEditFamilyVisible  : false,
     }
 
   componentWillMount() {
@@ -170,6 +195,7 @@ class Contact extends Component {
     val = snapshot.val() || {};
     info = val;
 
+    listView   = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     child      = [];
     childNumber= 0;
     drink      = '';
@@ -177,6 +203,7 @@ class Contact extends Component {
     snack      = '';
     music      = '';
     sport      = '';
+    members    = [];
     if (info.favourite) {
       drink = info.favourite.drink;
       food  = info.favourite.food;
@@ -184,9 +211,11 @@ class Contact extends Component {
       music = info.favourite.music;
       sport = info.favourite.sport;
     }
-    if (info.children) {
-      childNumber = info.children.length;
-      child = info.children;
+    if (info.family) {
+      members = Object.keys(info.family).map(function (key) {
+        info.family[key].key = key;
+        return info.family[key];
+      });
     }
     this.setState({
       info,
@@ -197,13 +226,13 @@ class Contact extends Component {
       sport,
       childNumber,
       child,
+      memberList : listView.cloneWithRows(members),
       member     : info.member,
       loadingInfo: false,
       nickname   : info.nickname,
       gender     : info.gender,
       more       : info.info
     });
-    console.log(this.state);
   }
 
   header() {
@@ -237,17 +266,68 @@ class Contact extends Component {
     user.updatePassword(this.state.password)
       .then(() => {
         this.setState({ isPasswordVisible: false, newPassword: '', password: '', passwordErr: '' })
+      })
+      .catch((err) => {
+        this.setState({
+          newPassword: '',
+          password: '',
+          passwordErr: 'This operation is sensitive and requires recent authentication. Log in again before changing password.'
+        })
       });
   }
 
-  saveFamily(){
-    firebase.database().ref(`/userInfo/${this.props.uid}`)
-    .update({
-      member  : this.state.member,
-      children: this.state.child
+  saveFamilyMember() {
+    if (!this.state.newMemberName || !this.state.newMemberRelation || !this.state.newMemberBirthday) {
+      this.setState({ familyError: 'Name, relation and birthday must be filled.' });
+      return;
+    }
+    firebase.database().ref(`/userInfo/${this.props.uid}/family`)
+    .push({
+      name: this.state.newMemberName,
+      relation: this.state.newMemberRelation,
+      birthday: this.state.newMemberBirthday,
+      phone: this.state.newMemberNumber
     })
-    .then(() => { this.setState({ isFamilyVisible: false })
-    });
+    .then(() => this.setState({
+      isFamilyMemberVisible: false,
+      newMemberName: '',
+      newMemberRelation: '',
+      newMemberBirthday: '',
+      newMemberNumber: ''
+    }));
+  }
+
+  updateFamilyMember() {
+    if (!this.state.newMemberName || !this.state.newMemberRelation || !this.state.newMemberBirthday) {
+      this.setState({ familyError: 'Name, relation and birthday must be filled.' });
+      return;
+    }
+    firebase.database().ref(`/userInfo/${this.props.uid}/family/${this.state.editMemberKey}`)
+    .update({
+      name: this.state.newMemberName,
+      relation: this.state.newMemberRelation,
+      birthday: this.state.newMemberBirthday,
+      phone: this.state.newMemberNumber
+    })
+    .then(() => this.setState({ 
+      isEditFamilyVisible: false,
+      newMemberName: '',
+      newMemberRelation: '',
+      newMemberBirthday: '',
+      newMemberNumber: ''
+    }));
+  }
+
+  removeFamilyMember() {
+    firebase.database().ref(`/userInfo/${this.props.uid}/family/${this.state.editMemberKey}`)
+      .remove()
+      .then(() => this.setState({ 
+        isEditFamilyVisible: false,
+        newMemberName: '',
+        newMemberRelation: '',
+        newMemberBirthday: '',
+        newMemberNumber: ''
+      }));
   }
 
   saveNickName(){
@@ -408,33 +488,28 @@ class Contact extends Component {
       </View>
   )}
 
-  addChildToObject(index, child) {
-    let arr = this.state.child.slice();
-    arr[index] = child;
-    this.setState({ child: arr });
-  }
-
-  renderChildren() {
-    console.log(this.state);
-    let children = [];
-    for ( let i = 0; i < this.state.childNumber; i ++) {
-      console.log(i);
-      children.push(
-        <CardSection key={i}>
-          <Input
-            icon        ='ios-body'
-            placeholder ="Firstname /Child/"
-            onChangeText={(child) => this.addChildToObject(i, child)}
-            value       ={this.state.child[i]}
-          />
-          <TouchableOpacity>
-            <Icon name="times" size={30} color="#F44336" style={styles.iconList}/>
-          </TouchableOpacity>
+  renderFamilyMember(rowData) {
+    return (
+      <TouchableOpacity onPress={() => this.setState({
+        isEditFamilyVisible: true,
+        newMemberBirthday: rowData.birthday,
+        newMemberName: rowData.name,
+        newMemberRelation: rowData.relation,
+        newMemberNumber: rowData.phone,
+        editMemberKey: rowData.key
+      })}>
+        <CardSection style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View>
+            <Text style={{ color: '#000' }}>{rowData.name}</Text>
+            <Text style={{ color: '#aaa' }}>{rowData.relation}</Text>
+          </View>
+          <View>
+            <Text style={{ color: '#000', textAlign: 'right' }}>{rowData.phone}</Text>
+            <Text style={{ color: '#aaa' }}>{rowData.birthday}</Text>
+          </View>
         </CardSection>
-      );
-    }
-
-    return (<View>{ children }</View>)
+      </TouchableOpacity>
+    )
   }
 
   renderWrappers() {
@@ -582,14 +657,16 @@ class Contact extends Component {
                 icon="ios-mail"
                 placeholder="E-mail address"
                 onChangeText={(email) => this.setState({email})}
-                value={this.state.email} />
+                value={this.state.email}
+                autoCapitalize='none' />
             </CardSection>
             <CardSection>
               <Input
                 icon="ios-call"
                 placeholder="Phone number"
                 onChangeText={(phone) => this.setState({phone})}
-                value={this.state.phone} />
+                value={this.state.phone}
+                autoCapitalize='none' />
             </CardSection>
           </Card>
         </ModalWrapper>
@@ -634,31 +711,136 @@ class Contact extends Component {
         <ModalWrapper
           isVisible={this.state.isFamilyVisible}
           title="Family"
-          onSave={this.saveFamily.bind(this)}
-          onHide={() => this.setState({
-            isFamilyVisible: false,
-            member: this.state.info.member,
-            child: this.state.info.children ? this.state.info.children : [],
-            childNumber: this.state.info.children ? this.state.info.children.length : 0 
-          })} >
+          onHide={() => this.setState({ isFamilyVisible: false })} >
           <Card>
-            <CardSection>
-              <Input
-                icon        ='ios-heart'
-                placeholder ="Firstame /Husband or Wife/"
-                style       ={styles.inputStyle}
-                onChangeText={(member) => this.setState({member})}
-                value       ={this.state.member}
-              />
-            </CardSection>
-            {this.renderChildren()}
-            <CardSection style={{ alignSelf: 'flex-end', marginRight: 20}}>
-              <TouchableOpacity style={{flexDirection: 'row'}} onPress={() => this.setState({ childNumber: this.state.childNumber + 1 })}>
-                <Icon name="plus" size={15} color="#555"/>
-                <Text>Add child</Text>
+            <ListView 
+              dataSource = {this.state.memberList}
+              renderRow = {(rowData) => this.renderFamilyMember(rowData)}
+              enableEmptySections = {true}
+            />
+            <CardSection style={{ alignSelf: 'flex-end'}}>
+              <TouchableOpacity onPress={() => this.setState({ isFamilyMemberVisible: true })}>
+                <Text>Add Family Member</Text>
               </TouchableOpacity>
             </CardSection>
           </Card>
+         
+          <ModalWrapper
+            isVisible={this.state.isFamilyMemberVisible}
+            title="Family Member"
+            onSave={this.saveFamilyMember.bind(this)}
+            onHide={() => this.setState({
+              isFamilyMemberVisible: false,
+              newMemberName: '',
+              newMemberBirthday: '',
+              newMemberRelation: '',
+              newMemberNumber: '',
+              familyError: '',
+            })}>
+            <Card>
+              <CardSection>
+                <Input
+                  icon         ='ios-contact'
+                  placeholder  ="FirstName"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(name) => this.setState({ newMemberName: name })}
+                  value        ={this.state.newMemberName}
+                />
+              </CardSection>
+              <CardSection>
+                <Input
+                  icon         ='ios-contacts'
+                  placeholder  ="Relation"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(relation) => this.setState({ newMemberRelation: relation })}
+                  value        ={this.state.newMemberRelation}
+                />
+              </CardSection>
+              <CardSection>
+                <Icon style={styles.iconStyle} name="birthday-cake" size={23} color="#98bce1"/>
+                <DatePicker
+                  style         ={styles.datePicker}
+                  value         ={this.state.newMemberBirthday}
+                  date          ={this.state.newMemberBirthday}
+                  mode          ="date"
+                  placeholder   ="Birthday"
+                  format        ="YYYY-MM-DD"
+                  confirmBtnText="Yes"
+                  cancelBtnText ="No"
+                  onDateChange  ={(birthday) => this.setState({ newMemberBirthday: birthday })}
+                />
+              </CardSection>
+              <CardSection>
+                <Input
+                  icon         ='ios-call'
+                  placeholder  ="Phone"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(number) => this.setState({ newMemberNumber: number })}
+                  value        ={this.state.newMemberNumber}
+                />
+              </CardSection>
+              <Text style={styles.errorText}>{this.state.familyError}</Text>
+            </Card>
+          </ModalWrapper>
+
+          <ModalWrapper
+            isVisible ={this.state.isEditFamilyVisible}
+            title     ="Edit Family Member"
+            onSave    ={this.updateFamilyMember.bind(this)}
+            onDelete  ={this.removeFamilyMember.bind(this)}
+            onHide    ={() => this.setState({
+              isEditFamilyVisible: false,
+              newMemberName      : '',
+              newMemberBirthday  : '',
+              newMemberRelation  : '',
+              newMemberNumber    : '',
+              familyError        : '',
+            })}>
+            <Card>
+              <CardSection>
+                <Input
+                  icon         ='ios-contact'
+                  placeholder  ="FirstName"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(name) => this.setState({ newMemberName: name })}
+                  value        ={this.state.newMemberName}
+                />
+              </CardSection>
+              <CardSection>
+                <Input
+                  icon         ='ios-contacts'
+                  placeholder  ="Relation"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(relation) => this.setState({ newMemberRelation: relation })}
+                  value        ={this.state.newMemberRelation}
+                />
+              </CardSection>
+              <CardSection>
+                <Icon style={styles.iconStyle} name="birthday-cake" size={23} color="#98bce1"/>
+                <DatePicker
+                  style         ={styles.datePicker}
+                  value         ={this.state.newMemberBirthday}
+                  date          ={this.state.newMemberBirthday}
+                  mode          ="date"
+                  placeholder   ="Birthday"
+                  format        ="YYYY-MM-DD"
+                  confirmBtnText="Yes"
+                  cancelBtnText ="No"
+                  onDateChange  ={(birthday) => this.setState({ newMemberBirthday: birthday })}
+                />
+              </CardSection>
+              <CardSection>
+                <Input
+                  icon         ='ios-call'
+                  placeholder  ="Phone"
+                  style        ={styles.inputStyle}
+                  onChangeText ={(number) => this.setState({ newMemberNumber: number })}
+                  value        ={this.state.newMemberNumber}
+                />
+              </CardSection>
+              <Text style={styles.errorText}>{this.state.familyError}</Text>
+            </Card>
+          </ModalWrapper>
         </ModalWrapper>
 
         <ModalWrapper
@@ -764,25 +946,6 @@ class Contact extends Component {
     );
   }
 
-  renderFamily(infoProp) {
-    if (!infoProp.children)
-      return ;
-    let children = [];
-    infoProp.children.forEach( (child, i) => {
-      children.push(
-        <View key={i} style={styles.mainContainerStyle}>
-          <Icon style={styles.contentIconStyle} name="child" size={18} color="#333"/>
-          <Text style={styles.contentIconStyle}>{child}</Text>
-        </View>
-      );
-    });
-    return (
-      <View>
-        {children}
-      </View>
-    )
-  }
-
   renderEditIcon() {
     <Icon name="pencil-square-o" size={23} color="#000" style={styles.icon} onPress={() => this.setState({ isNicknameVisible: true })}/>
   }
@@ -810,6 +973,21 @@ class Contact extends Component {
             })
         }
       })
+  }
+
+  renderMembersOnProfile(rowData) {
+    return (
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, marginRight: 30 }}>
+        <View>
+          <Text style={{ color: '#000' }}>{rowData.name}</Text>
+          <Text style={{ color: '#aaa' }}>{rowData.relation}</Text>
+        </View>
+        <View>
+          <Text style={{ color: '#000', textAlign: 'right' }}>{rowData.phone}</Text>
+          <Text style={{ color: '#aaa' }}>{rowData.birthday}</Text>
+        </View>
+      </View>
+    )
   }
 
   renderContent() {
@@ -876,16 +1054,20 @@ class Contact extends Component {
           </View>
         </View>
 
-        <View style={styles.mainStyle}>
-          <View style={styles.center}>
-            <TouchableOpacity onPress={this.OnPhonePress.bind(this)}>
-              <Icon name="phone-square" size={42} color="#009e11" style={{marginRight: 15}} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={this.OnTextPress.bind(this)}>
-              <Icon name="envelope" size={42} color="#b45f00" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        { 
+          userProp.phone
+            ? <View style={styles.mainStyle}>
+                <View style={styles.center}>
+                  <TouchableOpacity onPress={this.OnPhonePress.bind(this)}>
+                    <Icon name="phone-square" size={42} color="#009e11" style={{marginRight: 15}} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={this.OnTextPress.bind(this)}>
+                    <Icon name="envelope" size={42} color="#b45f00" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            : null
+        }
 
         <View style={styles.columnStyle}>
           <View style={styles.mainTitle}>
@@ -909,18 +1091,20 @@ class Contact extends Component {
           </View>
           <View style={styles.mainContent}>
              {
-                userProp.email &&
-                <View style={styles.mainContainerStyle}>
-                  <Icon style={styles.contentIconStyle} name="envelope" size={14} color="#333"/>
-                  <Text style={styles.contentIconStyle}>{userProp.email}</Text>
-                </View>
+                userProp.email
+                  ? <View style={styles.mainContainerStyle}>
+                      <Icon style={styles.contentIconStyle} name="envelope" size={14} color="#333"/>
+                      <Text style={styles.contentIconStyle}>{userProp.email}</Text>
+                    </View>
+                  : null
               }
             {
-              userProp.phone &&
-              <View style={styles.mainContainerStyle}>
-                <Icon style={styles.contentIconStyle} name="phone-square" size={18} color="#333"/>
-                <Text style={styles.contentIconStyle}>{userProp.phone}</Text>
-              </View>
+              userProp.phone 
+                ?  <View style={styles.mainContainerStyle}>
+                    <Icon style={styles.contentIconStyle} name="phone-square" size={18} color="#333"/>
+                    <Text style={styles.contentIconStyle}>{userProp.phone}</Text>
+                  </View>
+                : null
              }
           </View>
 
@@ -935,18 +1119,20 @@ class Contact extends Component {
           </View>
           <View style={styles.mainContent}>
           {
-              userProp.anniversary.birthday &&
-            <View style={styles.mainContainerStyle}>
-              <Icon style={styles.contentIconStyle} name="birthday-cake" size={14} color="#333"/>
-              <Text style={styles.contentIconStyle}>{userProp.anniversary.birthday}</Text>
-            </View>
+              userProp.anniversary.birthday
+                ? <View style={styles.mainContainerStyle}>
+                    <Icon style={styles.contentIconStyle} name="birthday-cake" size={14} color="#333"/>
+                    <Text style={styles.contentIconStyle}>{userProp.anniversary.birthday}</Text>
+                  </View>
+                : null
           }
           {
-              userProp.anniversary.firstDay &&
-            <View style={styles.mainContainerStyle}>
-              <Icon style={styles.contentIconStyle} name="briefcase" size={14} color="#333"/>
-              <Text style={styles.contentIconStyle}>{userProp.anniversary.firstDay}</Text>
-            </View>
+              userProp.anniversary.firstDay
+                ? <View style={styles.mainContainerStyle}>
+                    <Icon style={styles.contentIconStyle} name="briefcase" size={14} color="#333"/>
+                    <Text style={styles.contentIconStyle}>{userProp.anniversary.firstDay}</Text>
+                  </View>
+                : null
           }
           </View>
           <View style={styles.mainTitle}>
@@ -960,24 +1146,12 @@ class Contact extends Component {
           </View>
           <View style={styles.mainContent}>
             <View style={styles.mainContainerStyle}>
-              {
-                (infoProp.member)
-                  ? 
-                  <View style={styles.btnContainer}>
-                    <Icon style={styles.contentIconStyle} name="heart" size={14} color="#333"/>
-                    <Text style={styles.contentIconStyle}>{infoProp.member}</Text>
-                  </View>
-                  : null
-              }
-              {
-                (infoProp.member)
-                  ? (infoProp.gender && infoProp.gender.toLowerCase() === 'female')
-                      ? <Text>\husband\</Text>
-                      : <Text>\wife\</Text>
-                  : null
-              }
+              <ListView 
+                dataSource = {this.state.memberList}
+                renderRow = {(rowData) => this.renderMembersOnProfile(rowData)}
+                enableEmptySections = {true}
+              />
             </View>
-            {this.renderFamily(infoProp)}
           </View>
           <View style={styles.mainTitle}>
             <Text style={styles.mainTitleText}>Favourite things</Text>
@@ -1095,10 +1269,11 @@ class Contact extends Component {
           (!this.state.loadingUser && !this.state.loadingInfo)  ? this.renderWrappers() : null
         }
         {
-          this.props.isAdmin &&
-          <EditButton
-            style={styles.floatButton}
-            onEditPress={this.editContact.bind(this)}/>
+          this.props.isAdmin
+            ? <EditButton
+                style={styles.floatButton}
+                onEditPress={this.editContact.bind(this)}/>
+            : null
         }
     </View>
     );
