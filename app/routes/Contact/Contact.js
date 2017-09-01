@@ -131,7 +131,6 @@ class Contact extends Component {
       info       : null,
       loadingUser: true,
       loadingInfo: true,
-      childNumber: 0,
       currentUid : firebase.auth().currentUser.uid,
       uid        : '',
       password   : '',
@@ -189,6 +188,16 @@ class Contact extends Component {
       birthday   : user.anniversary.birthday,
       firstDay   : user.anniversary.firstDay
     });
+
+    ref = firebase.database().ref(`/structures/${user.structure}`);
+    ref.on('value', this.handleStructure);
+  }
+
+  handleStructure = (snapshot) => {
+    val = snapshot.val() || {};
+    this.setState({
+      structure: val.name
+    });
   }
 
   handleInfo = (snapshot) => {
@@ -196,20 +205,32 @@ class Contact extends Component {
     info = val;
 
     listView   = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
-    child      = [];
-    childNumber= 0;
     drink      = '';
     food       = '';
     snack      = '';
     music      = '';
     sport      = '';
     members    = [];
+
+    facebook  = ''
+    twitter   = ''
+    instagram = ''
+    linkedin  = ''
+    skype     = ''
+
     if (info.favourite) {
       drink = info.favourite.drink;
       food  = info.favourite.food;
       snack = info.favourite.snack;
       music = info.favourite.music;
       sport = info.favourite.sport;
+    }
+    if (info.social) {
+      facebook  = info.social.facebook;
+      twitter   = info.social.twitter;
+      instagram = info.social.instagram;
+      linkedin  = info.social.linkedin;
+      skype     = info.social.skype;
     }
     if (info.family) {
       members = Object.keys(info.family).map(function (key) {
@@ -224,14 +245,17 @@ class Contact extends Component {
       snack,
       music,
       sport,
-      childNumber,
-      child,
+      facebook,
+      twitter,
+      instagram,
+      linkedin,
+      skype,
       memberList : listView.cloneWithRows(members),
-      member     : info.member,
       loadingInfo: false,
       nickname   : info.nickname,
       gender     : info.gender,
-      more       : info.info
+      more       : info.info,
+
     });
   }
 
@@ -454,34 +478,34 @@ class Contact extends Component {
 
   renderSocialIcons(userProp, infoProp) {
     return (
-      <View style={{flexDirection: 'row', paddingBottom: 20, paddingTop: 10, justifyContent: 'space-around'}}>
+      <View style={{flexDirection: 'row', paddingBottom: 20, paddingTop: 10, justifyContent: 'center'}}>
       {
        (infoProp.social && infoProp.social.facebook) ?
-        <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com/'+infoProp.facebook)}>
+        <TouchableOpacity onPress={() => Linking.openURL(`https://www.facebook.com/${infoProp.social.facebook}`)}>
           <Image source={images.fb} style={styles.socialImage} />
         </TouchableOpacity> : null 
       }
       {
       (infoProp.social && infoProp.social.twitter) ?
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`https://www.twitter.com/${infoProp.social.twitter}`)}>
           <Image source={images.twitter} style={styles.socialImage} />
         </TouchableOpacity> : null      
       }
       {
         (infoProp.social && infoProp.social.instagram) ?
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`https://www.instagram.com/${infoProp.social.instagram}`)}>
           <Image source={images.instagram} style={styles.socialImage} />
         </TouchableOpacity> : null
       }
       {
        (infoProp.social && infoProp.social.linkedin) ?
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`https://www.linkedin.com/${infoProp.social.linkedin}`)}>
           <Image source={images.linkedin} style={styles.socialImage} />
         </TouchableOpacity> : null
       }
       {
         (infoProp.social && infoProp.social.skype) ?
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`https://www.skype.com/${infoProp.social.skype}`)}>
           <Image source={images.skype} style={styles.socialImage} />
         </TouchableOpacity> : null
       }
@@ -564,7 +588,7 @@ class Contact extends Component {
           {
             this.state.user.profileImg
               ? <Image source={{uri: this.state.user.profileImg}} style={styles.bigImage} />
-              : <Image source={images.avatar} style={styles.bigImage} />
+              : <Image source={images.avatar} style={styles.bigAccImage} />
           }
         </ModalWrapperClose>
 
@@ -991,13 +1015,16 @@ class Contact extends Component {
   }
 
   renderContent() {
-    if (this.state.loadingUser || this.state.loadingInfo)
-      return <Spinner/>
+    if (this.state.loadingUser || this.state.loadingInfo) {
+      return (
+          <Spinner style={{ marginTop: 200 }}/>
+        )
+    }
 
     const userProp = this.state.user;
     const infoProp = this.state.info; 
     return (
-      <ScrollView style={{ marginBottom:60 }}>
+      <ScrollView >
         <View style={styles.mainStyle}>
           { 
             ( this.props.currentUser)
@@ -1020,6 +1047,10 @@ class Contact extends Component {
             <View style={styles.nameFlex}>
               <Text style={styles.generalText}>Position:</Text>
               <Text style={styles.position}>{userProp.position}</Text>
+            </View>
+            <View style={styles.nameFlex}>
+              <Text style={styles.generalText}>Department:</Text>
+              <Text style={styles.department}>{this.state.structure}</Text>
             </View>
             <View style={styles.nameFlex}>
               <Text style={styles.generalText}>Nickname:</Text>
@@ -1262,7 +1293,7 @@ class Contact extends Component {
 
   render() {
     return (
-      <View style={{backgroundColor: '#eee', paddingBottom: 20 }}>
+      <View style={{backgroundColor: '#eee', flex: 1, justifyContent: 'center' }}>
         {this.header()}
         {this.renderContent()}
         {
@@ -1271,7 +1302,6 @@ class Contact extends Component {
         {
           this.props.isAdmin
             ? <EditButton
-                style={styles.floatButton}
                 onEditPress={this.editContact.bind(this)}/>
             : null
         }
@@ -1289,7 +1319,6 @@ const styles = StyleSheet.create({
   },
   floatButton: {
     position: 'absolute',
-    marginBottom: 60,
   },
   columnStyle: {
     flexDirection: 'column',
@@ -1376,6 +1405,10 @@ const styles = StyleSheet.create({
   bigImage: {
     height: 300,
     resizeMode: 'contain',
+  },
+  bigAccImage: {
+    height: 300,
+    resizeMode: 'contain',
     justifyContent: 'center',
     alignSelf: 'center'
   },
@@ -1405,6 +1438,9 @@ const styles = StyleSheet.create({
   },
   position: {
     width: 200,
+  },
+  department: {
+    width: 165,
   },
   socialImage: {
     width: 30,

@@ -104,6 +104,15 @@ class Anniversary extends Component {
     });
   }
 
+  header() {
+    const { viewStyle, textStyle } = styles;
+    return (
+      <View style={viewStyle}>
+        <Text style={textStyle}>All Upcoming Events</Text>
+      </View>
+    )
+  }
+
   renderContent() {
     if (this.state.loading) {
       return (
@@ -113,53 +122,60 @@ class Anniversary extends Component {
       );
     }
     return (
-      <ScrollView >
-        <Text style={styles.centerText}>Today</Text>
-        <ListView 
-          dataSource           = {this.state.anniversaryList}
-          renderRow            = {(rowData) => this._renderRow(rowData)}
-          enableEmptySections  = {true}/>
-        <Text style={styles.centerText}>All Upcoming Events</Text>
-      </ScrollView>
+      <ListView 
+        dataSource           = {this.state.anniversaryList}
+        renderRow            = {(rowData) => this._renderRow(rowData)}
+        enableEmptySections  = {true}/>
+    );
+  }
+
+  renderBirthday(rowData) {
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return (
+      <TouchableOpacity> 
+        <View style={styles.mainContainer}>
+          <View style={styles.secondContainer}>
+            <Text style={styles.name}>{rowData.firstName} {rowData.lastname}</Text>
+            <Text>Happy {new Date().getYear() - new Date(rowData.anniversary.birthday).getYear()}-year birthday!</Text>
+          </View>
+          <View style={styles.dateBirth}>
+            <Text style={styles.dateBirthtext}>{months[new Date(rowData.anniversary.birthday).getUTCMonth(months)]}</Text>
+            <Text style={styles.dateBirthBold}>{new Date(rowData.anniversary.birthday).getDate()}</Text>
+          </View>
+        </View>
+      </TouchableOpacity> 
+    );
+  }
+
+  renderFirstday(rowData) {
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return (
+      <TouchableOpacity>
+        <View style={styles.mainContainer}>
+          <View style={styles.secondContainer}>
+            <Text style={styles.name}>{rowData.firstName} {rowData.lastname}</Text>
+            <Text>Happy {new Date().getYear() - new Date(rowData.anniversary.firstDay).getYear()}-year work anniversary!</Text>
+          </View> 
+          <View style={styles.dateWork}>
+            <Text style={styles.dateWorktext}>{months[new Date(rowData.anniversary.firstDay).getMonth(months)]}</Text>
+            <Text style={styles.dateWorkBold}>{new Date(rowData.anniversary.firstDay).getDate()}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
   }
 
   _renderRow(rowData) {
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return (
       <View>
         {
           (!rowData.isWork && rowData.anniversary.birthday)
-            ?
-          <TouchableOpacity> 
-            <View style={styles.mainContainer}>
-              <View style={styles.secondContainer}>
-                <Text style={styles.name}>{rowData.firstName} {rowData.lastname}</Text>
-                <Text>Happy {new Date().getYear() - new Date(rowData.anniversary.birthday).getYear()}-year birthday!</Text>
-              </View>
-              <View style={styles.dateBirth}>
-                <Text style={styles.dateBirthtext}>{months[new Date(rowData.anniversary.birthday).getUTCMonth(months)]}</Text>
-                <Text style={styles.dateBirthBold}>{new Date(rowData.anniversary.birthday).getDate()}</Text>
-              </View>
-            </View>
-          </TouchableOpacity> 
-          : null
+            ? this.renderBirthday(rowData)
+            : null
         }
         {
           (rowData.isWork && rowData.anniversary.firstDay)
-            ?
-            <TouchableOpacity>
-              <View style={styles.mainContainer}>
-                <View style={styles.secondContainer}>
-                  <Text style={styles.name}>{rowData.firstName} {rowData.lastname}</Text>
-                  <Text>Happy {new Date().getYear() - new Date(rowData.anniversary.firstDay).getYear()}-year work anniversary!</Text>
-                </View> 
-                <View style={styles.dateWork}>
-                  <Text style={styles.dateWorktext}>{months[new Date(rowData.anniversary.firstDay).getMonth(months)]}</Text>
-                  <Text style={styles.dateWorkBold}>{new Date(rowData.anniversary.firstDay).getDate()}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            ? this.renderFirstday(rowData)
             : null
         }
       </View>
@@ -178,6 +194,7 @@ class Anniversary extends Component {
   render() {
     return (
       <View style={styles.container}>
+        {this.header()}
         {this.renderContent()}
         {
           this.props.isAdmin &&
@@ -215,7 +232,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1, 
     paddingBottom: 65, 
-    paddingTop: (Platform.OS === 'ios') ? 30 : 0,
     backgroundColor: '#eee',
   },
   floatButton: {
@@ -250,6 +266,18 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  textStyle: {
+    fontSize: 23,
+    color: '#fff',
+    textAlign: 'center'
+  },
+  viewStyle: {
+    backgroundColor: '#6fa8dc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 75,
+    paddingTop: (Platform.OS === 'ios') ? 20 : 0,
   },
 });
 
