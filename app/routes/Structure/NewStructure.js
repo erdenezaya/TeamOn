@@ -109,7 +109,7 @@ class NewStructure extends Component {
   		      />
           </CardSection>
           <CardSection>
-            <Text style={styles.labelStyle}>Head department</Text>
+            <Text style={styles.labelStyle}>Head department:</Text>
           </CardSection>
           {this.renderPicker()}
         </Card>

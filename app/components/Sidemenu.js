@@ -164,7 +164,9 @@ const styles = {
   },
   position: {
     fontSize: 13,
-    marginTop: 5
+    marginTop: 5,
+    paddingLeft: 20,
+    paddingRight: 20,
   },
   icon: {
     paddingRight: 13

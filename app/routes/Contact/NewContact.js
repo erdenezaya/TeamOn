@@ -191,7 +191,7 @@ class NewContact extends Component {
               </CardSection>
             </TouchableOpacity>
             <CardSection>
-              <Text style={styles.labelStyle}>Department</Text>
+              <Text style={styles.labelStyle}>Department:</Text>
             </CardSection>
             {this.renderPicker()}
             <CardSection>

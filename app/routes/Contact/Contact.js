@@ -25,6 +25,7 @@ import Uploader from '../../components/Uploader';
 import { Header, Spinner, FloatButton, EditButton, Input, CardSection, Card } from '../../components/common';
 import images from '../../config/images';
 import firebase from '../../utils/firebase';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 Height = Dimensions.get("window").height
 Width = Dimensions.get("window").width
@@ -388,22 +389,6 @@ class Contact extends Component {
     });
   }
 
-  saveContact() {
-    firebase.database().ref(`/users/${this.props.uid}/`)
-    .update({
-      phone: this.state.phone,
-      email: this.state.email
-     })
-    .then(() => {
-      this.setState({ isContactVisible: false });
-      Actions.contact({
-        uid: this.props.uid,
-        isAdmin: this.props.isAdmin,
-        currentUser: firebase.auth().currentUser.uid === this.props.uid
-      });
-    });
-  }
-
   saveAnniversary() {
     firebase.database().ref(`/users/${this.props.uid}/`)
     .update({
@@ -474,6 +459,12 @@ class Contact extends Component {
     const { phone, firstName } = this.state.user;
 
     Communications.text(phone.toString(), `Hi, ${firstName}`)
+  }
+
+  OnEmailPress(){
+    const { email } = this.state.user;
+
+    Communications.email([email.toString(),],null,null,'My Subject','My body text')
   }
 
   renderSocialIcons(userProp, infoProp) {
@@ -666,31 +657,6 @@ class Contact extends Component {
                 onChangeText  ={(skype) => this.setState({skype})}
                 value         ={this.state.skype}
                 autoCapitalize='none'  />
-            </CardSection>
-          </Card>
-        </ModalWrapper>
-
-        <ModalWrapper
-          isVisible={this.state.isContactVisible}
-          title="Contact Info"
-          onSave={this.saveContact.bind(this)}
-          onHide={() => this.setState({ isContactVisible: false, email: this.state.user.email, phone: this.state.user.phone })} >
-          <Card>
-            <CardSection>
-              <Input
-                icon="ios-mail"
-                placeholder="E-mail address"
-                onChangeText={(email) => this.setState({email})}
-                value={this.state.email}
-                autoCapitalize='none' />
-            </CardSection>
-            <CardSection>
-              <Input
-                icon="ios-call"
-                placeholder="Phone number"
-                onChangeText={(phone) => this.setState({phone})}
-                value={this.state.phone}
-                autoCapitalize='none' />
             </CardSection>
           </Card>
         </ModalWrapper>
@@ -920,6 +886,10 @@ class Contact extends Component {
               music: this.state.info.favourite.music,
               sport: this.state.info.favourite.sport
             })}>
+          <KeyboardAwareScrollView
+            style={styles.container}
+            behavior="padding"
+          >
           <Card>
             <CardSection>
               <Input
@@ -962,6 +932,7 @@ class Contact extends Component {
                 autoCapitalize='none' />
             </CardSection>
           </Card>
+          </KeyboardAwareScrollView>
         </ModalWrapper>
 
         {/*
@@ -1093,7 +1064,10 @@ class Contact extends Component {
                     <Icon name="phone-square" size={42} color="#009e11" style={{marginRight: 15}} />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={this.OnTextPress.bind(this)}>
-                    <Icon name="envelope" size={42} color="#b45f00" />
+                    <Icon name="envelope" size={42} color="#b45f00" style={{marginRight: 15}} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={this.OnEmailPress.bind(this)}>
+                    <Icon name="paper-plane" size={42} color="#2196f3" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1110,34 +1084,6 @@ class Contact extends Component {
             }
           </View>
           {this.renderSocialIcons(userProp, infoProp)}
-
-          <View style={styles.mainTitle}>
-            <Text style={styles.mainTitleText}>Contact Info</Text>
-            {
-              ( this.props.currentUser)
-                ? <Icon name="pencil-square-o" size={23} color="#000" style={styles.icon} onPress={() => this.setState({ isContactVisible: true })}/>
-                : null
-            }
-            
-          </View>
-          <View style={styles.mainContent}>
-             {
-                userProp.email
-                  ? <View style={styles.mainContainerStyle}>
-                      <Icon style={styles.contentIconStyle} name="envelope" size={14} color="#333"/>
-                      <Text style={styles.contentIconStyle}>{userProp.email}</Text>
-                    </View>
-                  : null
-              }
-            {
-              userProp.phone 
-                ?  <View style={styles.mainContainerStyle}>
-                    <Icon style={styles.contentIconStyle} name="phone-square" size={18} color="#333"/>
-                    <Text style={styles.contentIconStyle}>{userProp.phone}</Text>
-                  </View>
-                : null
-             }
-          </View>
 
           <View style={styles.mainTitle}>
             <Text style={styles.mainTitleText}>Anniversary</Text>
@@ -1425,19 +1371,21 @@ const styles = StyleSheet.create({
   },
   nameFlex: {
     flexDirection: 'row',
-    minWidth: 262,
     marginBottom: 7,
   },
   generalText: {
     fontSize: 14,
     fontWeight: '700',
-    marginRight: 7,
+    width: 90
   },
   icon: {
     justifyContent: 'flex-end', 
   },
+  userName: {
+    width: 170
+  },
   position: {
-    width: 200,
+    width: 170,
   },
   department: {
     width: 165,

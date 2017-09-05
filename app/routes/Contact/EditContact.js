@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import ActionButton from 'react-native-action-button';
 import { Spinner, Input, Card, CardSection } from '../../components/common'
 import firebase from '../../utils/firebase';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
 class EditContact extends Component {
 	constructor(props) {
@@ -128,50 +129,55 @@ class EditContact extends Component {
       <View>
         {this.header()}
         <ScrollView>
-          <Card style={{paddingBottom: 145}}>
-            <TouchableOpacity onPress={() => this.setState({isAdmin: !this.state.isAdmin})}>
-              <CardSection style={{flexDirection: 'row' }}>
-                <Text style={styles.labelStyle}>Admin: </Text>
-                {
-                  this.state.isAdmin
-                    ? <Icon name="check-square-o" size={25} color='#555' />
-                    : <Icon name="square-o" size={25} color='#555' />
-                }
+          <KeyboardAwareScrollView
+            style={styles.container}
+            behavior="padding"
+          >
+            <Card style={{paddingBottom: 145}}>
+              <TouchableOpacity onPress={() => this.setState({isAdmin: !this.state.isAdmin})}>
+                <CardSection style={{flexDirection: 'row' }}>
+                  <Text style={styles.labelStyle}>Admin: </Text>
+                  {
+                    this.state.isAdmin
+                      ? <Icon name="check-square-o" size={25} color='#555' />
+                      : <Icon name="square-o" size={25} color='#555' />
+                  }
+                </CardSection>
+              </TouchableOpacity>
+              <CardSection>
+                <Text style={styles.labelStyle}>Department</Text>
               </CardSection>
-            </TouchableOpacity>
-            <CardSection>
-              <Text style={styles.labelStyle}>Department</Text>
-            </CardSection>
-            {this.renderPicker()}
-            <CardSection>
-              <Input
-                icon='ios-contact'
-                placeholder='First name'
-                value={this.state.firstName}
-                onChangeText={firstName => this.setState({ firstName })}
-                autoCapitalize='words'
-              />
-            </CardSection>
-            <CardSection>
-              <Input
-                icon='ios-contact-outline'
-                placeholder='Last name'
-                value={this.state.lastname}
-                onChangeText={lastname => this.setState({ lastname })}
-                autoCapitalize='words'
-              />
-            </CardSection>
-            <Text style={styles.errorText}>{this.state.error}</Text>
-            <CardSection >
-              <Input
-                icon='ios-navigate'
-                placeholder='Position'
-                value={this.state.position}
-                onChangeText={position => this.setState({ position })}
-                autoCapitalize='words'
-              />
-            </CardSection>
-          </Card>
+              {this.renderPicker()}
+              <CardSection>
+                <Input
+                  icon='ios-contact'
+                  placeholder='First name'
+                  value={this.state.firstName}
+                  onChangeText={firstName => this.setState({ firstName })}
+                  autoCapitalize='words'
+                />
+              </CardSection>
+              <CardSection>
+                <Input
+                  icon='ios-contact-outline'
+                  placeholder='Last name'
+                  value={this.state.lastname}
+                  onChangeText={lastname => this.setState({ lastname })}
+                  autoCapitalize='words'
+                />
+              </CardSection>
+              <Text style={styles.errorText}>{this.state.error}</Text>
+              <CardSection >
+                <Input
+                  icon='ios-navigate'
+                  placeholder='Position'
+                  value={this.state.position}
+                  onChangeText={position => this.setState({ position })}
+                  autoCapitalize='words'
+                />
+              </CardSection>
+            </Card>
+          </KeyboardAwareScrollView>
         </ScrollView>
       </View>
       )
