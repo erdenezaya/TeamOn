@@ -273,7 +273,7 @@ class Contact extends Component {
           ? (<TouchableOpacity onPress={() => this.setState({ isPasswordVisible: true })} style={styles.headBtn}>
               <Icon name="lock" size={30} color="#fff" style={iconList} />
             </TouchableOpacity>)
-          : <View/>
+          : <View style={{width: 80}}/>
       }
     </View>
   )}
@@ -458,13 +458,13 @@ class Contact extends Component {
   OnTextPress(){
     const { phone, firstName } = this.state.user;
 
-    Communications.text(phone.toString(), `Hi, ${firstName}`)
+    Communications.text(phone.toString(), '')
   }
 
   OnEmailPress(){
     const { email } = this.state.user;
 
-    Communications.email([email.toString(),],null,null,'My Subject','My body text')
+    Communications.email([email.toString(),],null,null,'','')
   }
 
   renderSocialIcons(userProp, infoProp) {
@@ -1061,13 +1061,13 @@ class Contact extends Component {
             ? <View style={styles.mainStyle}>
                 <View style={styles.center}>
                   <TouchableOpacity onPress={this.OnPhonePress.bind(this)}>
-                    <Icon name="phone-square" size={42} color="#009e11" style={{marginRight: 15}} />
+                    <Icon name="phone-square" size={42} color="#009e11" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={this.OnTextPress.bind(this)}>
-                    <Icon name="envelope" size={42} color="#b45f00" style={{marginRight: 15}} />
+                    <Icon name="envelope" size={42} color="#b45f00" style={{margin: 15}} />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={this.OnEmailPress.bind(this)}>
-                    <Icon name="paper-plane" size={42} color="#2196f3" />
+                    <Icon name="paper-plane" size={36} color="#2196f3" />
                   </TouchableOpacity>
                 </View>
               </View>
