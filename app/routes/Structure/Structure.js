@@ -181,7 +181,7 @@ class Structure extends Component {
     return (
       <View>
         {this.header()}
-        <View style={{marginBottom: 210}}>
+        <View style={{marginBottom: 150}}>
         <ScrollView>
           {this.state.structures.map(this.renderStructures)}
         </ScrollView>

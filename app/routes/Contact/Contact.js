@@ -887,7 +887,6 @@ class Contact extends Component {
               sport: this.state.info.favourite.sport
             })}>
           <KeyboardAwareScrollView
-            style={styles.container}
             behavior="padding"
           >
           <Card>

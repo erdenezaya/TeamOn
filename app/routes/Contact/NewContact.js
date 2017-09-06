@@ -174,7 +174,6 @@ class NewContact extends Component {
     return (
       <View style={{marginBottom: 60}}>
           {this.header()}
-        <ScrollView>
         <KeyboardAwareScrollView
           style={styles.container}
           behavior="padding"
@@ -258,8 +257,7 @@ class NewContact extends Component {
               />
             </CardSection>
           </Card>
-         </KeyboardAwareScrollView>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </View>
       )
   }
